@@ -2,6 +2,7 @@
 # strict-coder/_lib.sh — 공통 설정 로더
 # Source this from any strict-coder script:
 #   source "$(dirname "$0")/../_lib.sh"
+# shellcheck disable=SC2034  # 변수들은 source하는 스크립트에서 사용됨
 
 # 프로젝트 루트 탐지
 SC_PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || echo "")}"

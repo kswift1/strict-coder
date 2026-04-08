@@ -3,6 +3,7 @@ set -euo pipefail
 
 # Layer 2: TDD 상태 확인
 
+# shellcheck disable=SC1091  # 동적 경로 — 런타임에 정상 resolve
 source "$(dirname "$0")/../_lib.sh"
 
 if [ ! -f "$SC_STATE_FILE" ]; then

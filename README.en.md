@@ -54,7 +54,7 @@ bash .ai/strict-coder/install.sh
 .ai/strict-coder/scripts/tdd-reset.sh                 # Next cycle
 ```
 
-The installer will ask for your project's test command, watch paths, and file patterns. That's it.
+The installer auto-detects source directories and asks for your test command and file patterns. Just confirm the detected paths and you're done.
 
 ---
 
@@ -134,7 +134,7 @@ All three layers communicate through a single `.tdd-state` file:
 
 ## Configuration
 
-`install.sh` creates `strict-coder.config.json` at your project root:
+`install.sh` creates `strict-coder.config.json` at your project root. During installation, it auto-detects source directories (`src/`, `lib/`, `pkg/`, `internal/`, etc.) and proposes them as watch paths.
 
 ```json
 {
@@ -148,6 +148,16 @@ All three layers communicate through a single `.tdd-state` file:
   "profile": null
 }
 ```
+
+### Changing configuration
+
+To modify settings after installation:
+
+```bash
+bash .ai/strict-coder/scripts/tdd-config.sh
+```
+
+Interactive menu for adding/removing watch paths, rescanning, editing test patterns, and changing the test command.
 
 ### Language examples
 
@@ -238,8 +248,9 @@ Create custom profiles with any language pair. See [`profiles/README.md`](profil
 
 ```
 strict-coder/
-├── install.sh                 Interactive setup
+├── install.sh                 Interactive setup (auto-detect)
 ├── _lib.sh                    Shared config loader
+├── _detect.sh                 Source directory auto-detection
 ├── strict-coder.config.example
 ├── hooks/
 │   ├── tdd-gate.sh            L1: Claude Code PreToolUse hook
@@ -248,7 +259,8 @@ strict-coder/
 │   ├── tdd-red.sh             L2: Record test failure
 │   ├── tdd-green.sh           L2: Record test pass
 │   ├── tdd-status.sh          Show current TDD state
-│   └── tdd-reset.sh           Reset for new cycle
+│   ├── tdd-reset.sh           Reset for new cycle
+│   └── tdd-config.sh          Configuration management
 ├── modes/
 │   ├── suggest.md             Default: confirmation required
 │   └── drive.md               Autonomous mode

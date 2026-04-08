@@ -54,7 +54,7 @@ bash .ai/strict-coder/install.sh
 .ai/strict-coder/scripts/tdd-reset.sh                 # 다음 사이클
 ```
 
-설치 중 프로젝트의 테스트 명령, 감시 경로, 파일 패턴을 물어봅니다. 그것만 답하면 끝.
+설치 중 소스 디렉토리를 자동으로 감지하고, 테스트 명령과 파일 패턴을 물어봅니다. 감지된 경로를 확인만 하면 끝.
 
 ---
 
@@ -134,7 +134,7 @@ Write failing test
 
 ## 설정
 
-`install.sh`가 프로젝트 루트에 `strict-coder.config.json`을 생성한다:
+`install.sh`가 프로젝트 루트에 `strict-coder.config.json`을 생성한다. 설치 시 소스 디렉토리(`src/`, `lib/`, `pkg/`, `internal/` 등)를 자동 감지하여 제안한다.
 
 ```json
 {
@@ -148,6 +148,16 @@ Write failing test
   "profile": null
 }
 ```
+
+### 설정 변경
+
+설치 후 설정을 변경하려면:
+
+```bash
+bash .ai/strict-coder/scripts/tdd-config.sh
+```
+
+대화형 메뉴로 감시 경로 추가/제거, 재스캔, 테스트 패턴 편집, 테스트 명령 변경이 가능하다.
 
 ### 언어별 예시
 
@@ -238,8 +248,9 @@ let name: String = String::from("hello");
 
 ```
 strict-coder/
-├── install.sh                 대화형 설치
+├── install.sh                 대화형 설치 (자동감지)
 ├── _lib.sh                    공통 설정 로더
+├── _detect.sh                 소스 디렉토리 자동 감지
 ├── strict-coder.config.example
 ├── hooks/
 │   ├── tdd-gate.sh            L1: Claude Code PreToolUse 훅
@@ -248,7 +259,8 @@ strict-coder/
 │   ├── tdd-red.sh             L2: 테스트 실패 기록
 │   ├── tdd-green.sh           L2: 테스트 통과 기록
 │   ├── tdd-status.sh          현재 TDD 상태 출력
-│   └── tdd-reset.sh           사이클 초기화
+│   ├── tdd-reset.sh           사이클 초기화
+│   └── tdd-config.sh          설정 변경 (감시 경로, 패턴 등)
 ├── modes/
 │   ├── suggest.md             기본: 확인 필수
 │   └── drive.md               자율 모드

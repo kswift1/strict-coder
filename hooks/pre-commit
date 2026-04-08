@@ -6,6 +6,7 @@ set -euo pipefail
 # Red->Green 사이클이 완료되었는지 확인한다.
 
 HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck disable=SC1091  # 동적 경로 — 런타임에 정상 resolve
 source "$HOOK_DIR/../_lib.sh"
 
 # 감시 대상 경로의 변경이 있는지 확인

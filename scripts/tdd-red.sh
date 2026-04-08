@@ -5,6 +5,7 @@ set -euo pipefail
 # 테스트를 실행하고 실패를 확인한 뒤 .tdd-state에 기록한다.
 # 사용법: ./tdd-red.sh [테스트 인수...]
 
+# shellcheck disable=SC1091  # 동적 경로 — 런타임에 정상 resolve
 source "$(dirname "$0")/../_lib.sh"
 
 TARGET_DIR="$SC_PROJECT_ROOT/$SC_PROJECT_DIR"

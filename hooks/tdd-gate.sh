@@ -6,6 +6,7 @@ set -euo pipefail
 # .tdd-state 를 확인하고 Red 완료 전이면 차단한다.
 
 HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck disable=SC1091  # 동적 경로 — 런타임에 정상 resolve
 source "$HOOK_DIR/../_lib.sh"
 
 INPUT=$(cat)

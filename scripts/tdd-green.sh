@@ -5,6 +5,7 @@ set -euo pipefail
 # Red 상태를 확인한 뒤 테스트를 실행하고 통과를 확인한다.
 # .tdd-state의 test_command와 test_args를 사용해 테스트를 실행한다.
 
+# shellcheck disable=SC1091  # 동적 경로 — 런타임에 정상 resolve
 source "$(dirname "$0")/../_lib.sh"
 
 # .tdd-state 존재 확인

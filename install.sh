@@ -7,6 +7,8 @@ set -euo pipefail
 #   bash .ai/strict-coder/install.sh
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/_detect.sh"
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo "")"
 
 if [ -z "$PROJECT_ROOT" ]; then
@@ -34,11 +36,23 @@ else
     echo "  프로젝트에 맞게 TDD 설정을 구성합니다."
     echo ""
 
-    read -rp "  감시 대상 경로 (프로젝트 루트 기준, 기본: src/): " WATCH_PATH
-    WATCH_PATH="${WATCH_PATH:-src/}"
+    # 감시 경로: 자동감지 → 확인/편집/직접입력
+    sc_interactive_watch_paths "$PROJECT_ROOT"
+    sc_paths_to_json
 
-    read -rp "  테스트 파일 패턴 (정규식, 기본: _test\\..+$): " TEST_PATTERN
-    TEST_PATTERN="${TEST_PATTERN:-_test\\..+$}"
+    # 테스트 파일 패턴 (복수 입력 지원)
+    read -rp "  테스트 파일 패턴 (정규식, 쉼표 구분, 기본: _test\\..+$): " TEST_PATTERN_INPUT
+    TEST_PATTERN_INPUT="${TEST_PATTERN_INPUT:-_test\\..+$}"
+    IFS=',' read -ra TEST_PATTERNS <<< "$TEST_PATTERN_INPUT"
+    TEST_PATTERNS_JSON="["
+    first=true
+    for tp in "${TEST_PATTERNS[@]}"; do
+        tp="$(echo "$tp" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+        [ -z "$tp" ] && continue
+        if [ "$first" = true ]; then first=false; else TEST_PATTERNS_JSON+=","; fi
+        TEST_PATTERNS_JSON+="\"$tp\""
+    done
+    TEST_PATTERNS_JSON+="]"
 
     read -rp "  테스트 실행 명령 (기본: make test): " TEST_CMD
     TEST_CMD="${TEST_CMD:-make test}"
@@ -47,14 +61,14 @@ else
     PROJ_DIR="${PROJ_DIR:-.}"
 
     jq -n \
-        --arg wp "$WATCH_PATH" \
-        --arg tp "$TEST_PATTERN" \
+        --argjson wp "$SC_PATHS_JSON" \
+        --argjson tp "$TEST_PATTERNS_JSON" \
         --arg tc "$TEST_CMD" \
         --arg pd "$PROJ_DIR" \
         '{
             tdd: {
-                watch_paths: [$wp],
-                test_file_patterns: [$tp],
+                watch_paths: $wp,
+                test_file_patterns: $tp,
                 test_command: $tc,
                 project_dir: $pd
             },
@@ -137,9 +151,11 @@ if [ -f "$GITIGNORE" ]; then
     if grep -q ".tdd-state" "$GITIGNORE"; then
         echo "  ⏭️  .tdd-state 이미 등록됨 (스킵)"
     else
-        echo "" >> "$GITIGNORE"
-        echo "# TDD State (strict-coder)" >> "$GITIGNORE"
-        echo ".tdd-state" >> "$GITIGNORE"
+        {
+            echo ""
+            echo "# TDD State (strict-coder)"
+            echo ".tdd-state"
+        } >> "$GITIGNORE"
         echo "  ✅ .tdd-state 추가"
     fi
 else
@@ -182,5 +198,5 @@ echo "  TDD Green:  $INSTALL_PATH/scripts/tdd-green.sh"
 echo "  TDD Status: $INSTALL_PATH/scripts/tdd-status.sh"
 echo "  TDD Reset:  $INSTALL_PATH/scripts/tdd-reset.sh"
 echo ""
-echo "설정 변경: strict-coder.config.json 편집"
+echo "설정 변경: $INSTALL_PATH/scripts/tdd-config.sh"
 echo "모드 전환: 대화 중 'suggest로 진행해' 또는 'drive 모드로'"
