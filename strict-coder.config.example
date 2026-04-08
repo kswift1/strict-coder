@@ -1,0 +1,10 @@
+{
+  "tdd": {
+    "watch_paths": ["src/"],
+    "test_file_patterns": ["_test\\..+$", "/tests/"],
+    "test_command": "cargo test",
+    "project_dir": "."
+  },
+  "mode": "suggest",
+  "profile": null
+}

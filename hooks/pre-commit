@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Layer 3: Git Pre-commit Hook
+# 감시 대상 경로 변경이 포함된 커밋에서
+# Red->Green 사이클이 완료되었는지 확인한다.
+
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$HOOK_DIR/../_lib.sh"
+
+# 감시 대상 경로의 변경이 있는지 확인
+WATCHED_CHANGES=""
+while IFS= read -r watch_path; do
+    [ -z "$watch_path" ] && continue
+    MATCHES=$(git diff --cached --name-only | grep "$watch_path" || true)
+    if [ -n "$MATCHES" ]; then
+        WATCHED_CHANGES="${WATCHED_CHANGES}${MATCHES}"$'\n'
+    fi
+done <<< "$SC_WATCH_PATHS"
+
+# 감시 대상 변경이 없으면 통과
+if [ -z "$(echo "$WATCHED_CHANGES" | sed '/^$/d')" ]; then
+    exit 0
+fi
+
+# 테스트 파일만 변경된 경우 통과
+NON_TEST_CHANGES=""
+while IFS= read -r file; do
+    [ -z "$file" ] && continue
+    if ! sc_is_test_file "$file"; then
+        NON_TEST_CHANGES="${NON_TEST_CHANGES}${file}"$'\n'
+    fi
+done <<< "$WATCHED_CHANGES"
+
+if [ -z "$(echo "$NON_TEST_CHANGES" | sed '/^$/d')" ]; then
+    exit 0
+fi
+
+# .tdd-state 확인
+if [ ! -f "$SC_STATE_FILE" ]; then
+    echo "" >&2
+    echo "TDD 커밋 게이트: 차단" >&2
+    echo "  변경 파일:" >&2
+    echo "$NON_TEST_CHANGES" | sed '/^$/d' | sed 's/^/    /' >&2
+    echo "  사유: .tdd-state 파일 없음. Red->Green 사이클을 거치지 않았습니다." >&2
+    echo "  해결: scripts/tdd-red.sh -> tdd-green.sh 실행" >&2
+    echo "" >&2
+    exit 1
+fi
+
+PHASE=$(jq -r '.phase // "none"' "$SC_STATE_FILE")
+RED_COMPLETE=$(jq -r '.red_complete // false' "$SC_STATE_FILE")
+GREEN_COMPLETE=$(jq -r '.green_complete // false' "$SC_STATE_FILE")
+LAST_RED=$(jq -r '.last_red_at // "none"' "$SC_STATE_FILE")
+
+# Green 완료 확인
+if [ "$GREEN_COMPLETE" != "true" ]; then
+    echo "" >&2
+    echo "TDD 커밋 게이트: 차단" >&2
+    echo "  변경 파일:" >&2
+    echo "$NON_TEST_CHANGES" | sed '/^$/d' | sed 's/^/    /' >&2
+    echo "  현재: phase=$PHASE, red=$RED_COMPLETE, green=$GREEN_COMPLETE" >&2
+    echo "  사유: Green이 완료되지 않았습니다." >&2
+    echo "  해결: scripts/tdd-green.sh 실행" >&2
+    echo "" >&2
+    exit 1
+fi
+
+# Red 증거 확인
+if [ "$LAST_RED" = "none" ] || [ "$LAST_RED" = "null" ]; then
+    echo "" >&2
+    echo "TDD 커밋 게이트: 차단" >&2
+    echo "  사유: Red 증거 없는 Green. Red->Green 사이클을 거치지 않았습니다." >&2
+    echo "" >&2
+    exit 1
+fi
+
+exit 0
