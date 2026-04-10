@@ -37,13 +37,14 @@ else
     echo "0/5 — 설정 파일 생성"
 
     if [ "${SC_NON_INTERACTIVE:-0}" = "1" ]; then
-        # 비대화 모드: 자동감지 기본값으로 config 생성
+        # 비대화 모드: 언어/경로 자동감지로 config 생성
         sc_interactive_watch_paths "$PROJECT_ROOT"
         sc_paths_to_json
-        TEST_PATTERNS_JSON='["_test\\..+$"]'
-        TEST_CMD="make test"
-        PROJ_DIR="."
-        echo "  (비대화 모드: 자동감지 기본값 사용)"
+        sc_detect_language_defaults "$PROJECT_ROOT"
+        TEST_PATTERNS_JSON="$SC_DETECTED_TEST_PATTERNS_JSON"
+        TEST_CMD="$SC_DETECTED_TEST_CMD"
+        PROJ_DIR="$SC_DETECTED_PROJECT_DIR"
+        echo "  (비대화 모드: 자동감지 — $TEST_CMD, dir=$PROJ_DIR)"
     else
         echo ""
         echo "  프로젝트에 맞게 TDD 설정을 구성합니다."

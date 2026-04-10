@@ -168,6 +168,61 @@ _sc_manual_input() {
     done
 }
 
+# 프로젝트 언어를 감지하여 테스트 기본값을 설정한다.
+# 결과: SC_DETECTED_TEST_CMD, SC_DETECTED_TEST_PATTERNS_JSON, SC_DETECTED_PROJECT_DIR
+# 인수: $1 = 프로젝트 루트 경로
+sc_detect_language_defaults() {
+    local project_root="$1"
+    SC_DETECTED_TEST_CMD="make test"
+    SC_DETECTED_TEST_PATTERNS_JSON='["_test\\..+$"]'
+    SC_DETECTED_PROJECT_DIR="."
+
+    # 루트에서 먼저, 없으면 1단계 서브디렉토리에서 탐색
+    local search_dirs=("$project_root")
+    for d in "$project_root"/*/; do
+        [ -d "$d" ] && search_dirs+=("$d")
+    done
+
+    for dir in "${search_dirs[@]}"; do
+        local rel=""
+        if [ "$dir" != "$project_root" ]; then
+            rel="$(basename "$dir")"
+        fi
+
+        if [ -f "$dir/Cargo.toml" ]; then
+            SC_DETECTED_TEST_CMD="cargo test"
+            SC_DETECTED_TEST_PATTERNS_JSON='["_test\\.rs$","/tests/"]'
+            [ -n "$rel" ] && SC_DETECTED_PROJECT_DIR="$rel"
+            return
+        elif [ -f "$dir/go.mod" ]; then
+            SC_DETECTED_TEST_CMD="go test ./..."
+            SC_DETECTED_TEST_PATTERNS_JSON='["_test\\.go$"]'
+            [ -n "$rel" ] && SC_DETECTED_PROJECT_DIR="$rel"
+            return
+        elif [ -f "$dir/package.json" ]; then
+            SC_DETECTED_TEST_CMD="npm test"
+            SC_DETECTED_TEST_PATTERNS_JSON='["\\.test\\.ts$","\\.spec\\.ts$","\\.test\\.js$","\\.spec\\.js$"]'
+            [ -n "$rel" ] && SC_DETECTED_PROJECT_DIR="$rel"
+            return
+        elif [ -f "$dir/pyproject.toml" ] || [ -f "$dir/pytest.ini" ] || [ -f "$dir/setup.py" ]; then
+            SC_DETECTED_TEST_CMD="pytest"
+            SC_DETECTED_TEST_PATTERNS_JSON='["test_.*\\.py$","/tests/"]'
+            [ -n "$rel" ] && SC_DETECTED_PROJECT_DIR="$rel"
+            return
+        elif [ -f "$dir/Package.swift" ]; then
+            SC_DETECTED_TEST_CMD="swift test"
+            SC_DETECTED_TEST_PATTERNS_JSON='["/Tests/"]'
+            [ -n "$rel" ] && SC_DETECTED_PROJECT_DIR="$rel"
+            return
+        elif [ -f "$dir/build.gradle" ] || [ -f "$dir/build.gradle.kts" ]; then
+            SC_DETECTED_TEST_CMD="./gradlew test"
+            SC_DETECTED_TEST_PATTERNS_JSON='["src/test/"]'
+            [ -n "$rel" ] && SC_DETECTED_PROJECT_DIR="$rel"
+            return
+        fi
+    done
+}
+
 # SC_SELECTED_PATHS 배열을 jq용 JSON 배열 문자열로 변환
 # 결과: SC_PATHS_JSON (예: '["src/","lib/"]')
 sc_paths_to_json() {
