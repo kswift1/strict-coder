@@ -45,12 +45,14 @@ sc_detect_watch_paths() {
             if [ -d "$project_root/$candidate" ]; then
                 # 이미 추가된 경로와 중복 체크
                 local dup=false
-                for existing in "${SC_DETECTED_PATHS[@]}"; do
-                    if [ "$existing" = "$candidate" ]; then
-                        dup=true
-                        break
-                    fi
-                done
+                if [ ${#SC_DETECTED_PATHS[@]} -gt 0 ]; then
+                    for existing in "${SC_DETECTED_PATHS[@]}"; do
+                        if [ "$existing" = "$candidate" ]; then
+                            dup=true
+                            break
+                        fi
+                    done
+                fi
                 [ "$dup" = false ] && SC_DETECTED_PATHS+=("$candidate")
             fi
         done
