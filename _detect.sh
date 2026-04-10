@@ -68,6 +68,16 @@ sc_interactive_watch_paths() {
 
     sc_detect_watch_paths "$project_root"
 
+    # 비대화 모드: 감지 결과 그대로 사용 (없으면 src/ 기본값)
+    if [ "${SC_NON_INTERACTIVE:-0}" = "1" ]; then
+        if [ ${#SC_DETECTED_PATHS[@]} -gt 0 ]; then
+            SC_SELECTED_PATHS=("${SC_DETECTED_PATHS[@]}")
+        else
+            SC_SELECTED_PATHS=("src/")
+        fi
+        return
+    fi
+
     if [ ${#SC_DETECTED_PATHS[@]} -gt 0 ]; then
         echo "  감시 대상 경로 자동 감지:"
         local i=1

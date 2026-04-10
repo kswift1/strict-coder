@@ -6,9 +6,8 @@ set -euo pipefail
 #   git clone https://github.com/{user}/strict-coder .ai/strict-coder
 #   bash .ai/strict-coder/install.sh
 #
-# AI 에이전트 설치:
-#   setup-guide.md 를 읽고 유저와 대화형으로 config를 생성한 뒤 install.sh 실행.
-#   config가 이미 있으면 step 0이 스킵되어 interactive 입력 없이 완료됨.
+# AI 에이전트 설치 (추천): setup-guide.md 참고
+# AI 에이전트 설치 (폴백): SC_NON_INTERACTIVE=1 bash .ai/strict-coder/install.sh
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck disable=SC1091
@@ -37,33 +36,43 @@ if [ -f "$CONFIG_FILE" ]; then
 else
     echo "0/5 — 설정 파일 생성"
 
-    echo ""
-    echo "  프로젝트에 맞게 TDD 설정을 구성합니다."
-    echo ""
+    if [ "${SC_NON_INTERACTIVE:-0}" = "1" ]; then
+        # 비대화 모드: 자동감지 기본값으로 config 생성
+        sc_interactive_watch_paths "$PROJECT_ROOT"
+        sc_paths_to_json
+        TEST_PATTERNS_JSON='["_test\\..+$"]'
+        TEST_CMD="make test"
+        PROJ_DIR="."
+        echo "  (비대화 모드: 자동감지 기본값 사용)"
+    else
+        echo ""
+        echo "  프로젝트에 맞게 TDD 설정을 구성합니다."
+        echo ""
 
-    # 감시 경로: 자동감지 → 확인/편집/직접입력
-    sc_interactive_watch_paths "$PROJECT_ROOT"
-    sc_paths_to_json
+        # 감시 경로: 자동감지 → 확인/편집/직접입력
+        sc_interactive_watch_paths "$PROJECT_ROOT"
+        sc_paths_to_json
 
-    # 테스트 파일 패턴 (복수 입력 지원)
-    read -rp "  테스트 파일 패턴 (정규식, 쉼표 구분, 기본: _test\\..+$): " TEST_PATTERN_INPUT
-    TEST_PATTERN_INPUT="${TEST_PATTERN_INPUT:-_test\\..+$}"
-    IFS=',' read -ra TEST_PATTERNS <<< "$TEST_PATTERN_INPUT"
-    TEST_PATTERNS_JSON="["
-    first=true
-    for tp in "${TEST_PATTERNS[@]}"; do
-        tp="$(echo "$tp" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-        [ -z "$tp" ] && continue
-        if [ "$first" = true ]; then first=false; else TEST_PATTERNS_JSON+=","; fi
-        TEST_PATTERNS_JSON+="\"$tp\""
-    done
-    TEST_PATTERNS_JSON+="]"
+        # 테스트 파일 패턴 (복수 입력 지원)
+        read -rp "  테스트 파일 패턴 (정규식, 쉼표 구분, 기본: _test\\..+$): " TEST_PATTERN_INPUT
+        TEST_PATTERN_INPUT="${TEST_PATTERN_INPUT:-_test\\..+$}"
+        IFS=',' read -ra TEST_PATTERNS <<< "$TEST_PATTERN_INPUT"
+        TEST_PATTERNS_JSON="["
+        first=true
+        for tp in "${TEST_PATTERNS[@]}"; do
+            tp="$(echo "$tp" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+            [ -z "$tp" ] && continue
+            if [ "$first" = true ]; then first=false; else TEST_PATTERNS_JSON+=","; fi
+            TEST_PATTERNS_JSON+="\"$tp\""
+        done
+        TEST_PATTERNS_JSON+="]"
 
-    read -rp "  테스트 실행 명령 (기본: make test): " TEST_CMD
-    TEST_CMD="${TEST_CMD:-make test}"
+        read -rp "  테스트 실행 명령 (기본: make test): " TEST_CMD
+        TEST_CMD="${TEST_CMD:-make test}"
 
-    read -rp "  프로젝트 디렉토리 (테스트 실행 위치, 기본: .): " PROJ_DIR
-    PROJ_DIR="${PROJ_DIR:-.}"
+        read -rp "  프로젝트 디렉토리 (테스트 실행 위치, 기본: .): " PROJ_DIR
+        PROJ_DIR="${PROJ_DIR:-.}"
+    fi
 
     jq -n \
         --argjson wp "$SC_PATHS_JSON" \
@@ -95,8 +104,12 @@ EXISTING_HOOKS_PATH=$(git config --get core.hooksPath 2>/dev/null || echo "")
 if [ -n "$EXISTING_HOOKS_PATH" ] && [ "$EXISTING_HOOKS_PATH" != "$HOOKS_PATH" ] && [ "$EXISTING_HOOKS_PATH" != "$HOOKS_PATH/" ]; then
     echo "  ⚠️  기존 core.hooksPath 감지: $EXISTING_HOOKS_PATH"
     echo "  strict-coder 훅으로 덮어쓰면 기존 훅이 무시됩니다."
-    echo "  계속하려면 Enter, 취소하려면 Ctrl+C"
-    read -r
+    if [ "${SC_NON_INTERACTIVE:-0}" = "1" ]; then
+        echo "  (비대화 모드: 덮어쓰기 진행)"
+    else
+        echo "  계속하려면 Enter, 취소하려면 Ctrl+C"
+        read -r
+    fi
 fi
 
 git config core.hooksPath "$HOOKS_PATH"
