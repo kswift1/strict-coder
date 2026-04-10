@@ -13,7 +13,7 @@ source "$HOOK_DIR/../_lib.sh"
 WATCHED_CHANGES=""
 while IFS= read -r watch_path; do
     [ -z "$watch_path" ] && continue
-    MATCHES=$(git diff --cached --name-only | grep "$watch_path" || true)
+    MATCHES=$(git diff --cached --name-only | grep -F "$watch_path" || true)
     if [ -n "$MATCHES" ]; then
         WATCHED_CHANGES="${WATCHED_CHANGES}${MATCHES}"$'\n'
     fi

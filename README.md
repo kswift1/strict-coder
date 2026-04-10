@@ -56,6 +56,8 @@ bash .ai/strict-coder/install.sh
 
 설치 중 소스 디렉토리를 자동으로 감지하고, 테스트 명령과 파일 패턴을 물어봅니다. 감지된 경로를 확인만 하면 끝.
 
+**AI 에이전트가 설치하는 경우:** [`setup-guide.md`](setup-guide.md)를 따라 유저와 대화형으로 설정을 수집한 뒤 설치합니다.
+
 ---
 
 ## 3레이어 TDD 강제
@@ -159,6 +161,10 @@ bash .ai/strict-coder/scripts/tdd-config.sh
 
 대화형 메뉴로 감시 경로 추가/제거, 재스캔, 테스트 패턴 편집, 테스트 명령 변경이 가능하다.
 
+### 제약사항
+
+`test_file_patterns`는 **파일 경로** 기반 매칭이다. Rust의 `#[cfg(test)] mod tests { ... }` 같은 인라인 테스트는 구현 파일 안에 있어서 파일 패턴으로 구분할 수 없다. 이 경우 해당 파일은 구현 파일로 취급되며, Red-Green 사이클이 필요하다.
+
 ### 언어별 예시
 
 | 언어 | `test_command` | `watch_paths` | `test_file_patterns` |
@@ -249,6 +255,7 @@ let name: String = String::from("hello");
 ```
 strict-coder/
 ├── install.sh                 대화형 설치 (자동감지)
+├── setup-guide.md             AI 에이전트 설치 가이드
 ├── _lib.sh                    공통 설정 로더
 ├── _detect.sh                 소스 디렉토리 자동 감지
 ├── strict-coder.config.example

@@ -5,6 +5,10 @@ set -euo pipefail
 # 사용법:
 #   git clone https://github.com/{user}/strict-coder .ai/strict-coder
 #   bash .ai/strict-coder/install.sh
+#
+# AI 에이전트 설치:
+#   setup-guide.md 를 읽고 유저와 대화형으로 config를 생성한 뒤 install.sh 실행.
+#   config가 이미 있으면 step 0이 스킵되어 interactive 입력 없이 완료됨.
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck disable=SC1091
@@ -32,6 +36,7 @@ if [ -f "$CONFIG_FILE" ]; then
     echo "  ⏭️  strict-coder.config.json 이미 존재 (스킵)"
 else
     echo "0/5 — 설정 파일 생성"
+
     echo ""
     echo "  프로젝트에 맞게 TDD 설정을 구성합니다."
     echo ""

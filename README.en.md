@@ -56,6 +56,8 @@ bash .ai/strict-coder/install.sh
 
 The installer auto-detects source directories and asks for your test command and file patterns. Just confirm the detected paths and you're done.
 
+**For AI agent installation:** follow [`setup-guide.md`](setup-guide.md) to collect settings from the user conversationally, then run the installer.
+
 ---
 
 ## Three-Layer TDD Enforcement
@@ -159,6 +161,10 @@ bash .ai/strict-coder/scripts/tdd-config.sh
 
 Interactive menu for adding/removing watch paths, rescanning, editing test patterns, and changing the test command.
 
+### Limitations
+
+`test_file_patterns` matches against **file paths**. Inline tests like Rust's `#[cfg(test)] mod tests { ... }` live inside implementation files and cannot be distinguished by file patterns. Such files are treated as implementation files and require the Red-Green cycle.
+
 ### Language examples
 
 | Language | `test_command` | `watch_paths` | `test_file_patterns` |
@@ -249,6 +255,7 @@ Create custom profiles with any language pair. See [`profiles/README.md`](profil
 ```
 strict-coder/
 ├── install.sh                 Interactive setup (auto-detect)
+├── setup-guide.md             AI agent installation guide
 ├── _lib.sh                    Shared config loader
 ├── _detect.sh                 Source directory auto-detection
 ├── strict-coder.config.example

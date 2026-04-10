@@ -45,8 +45,8 @@ if [ "$TEST_EXIT_CODE" -eq 0 ]; then
 fi
 
 # 실패 횟수 추정 (정보용, 정확하지 않을 수 있음)
-FAILED_COUNT=$(echo "$TEST_OUTPUT" | grep -ci "fail" || echo "1")
-[ "$FAILED_COUNT" -eq 0 ] && FAILED_COUNT=1
+FAILED_COUNT=$(echo "$TEST_OUTPUT" | grep -ciE "fail|error" || true)
+[ -z "$FAILED_COUNT" ] || [ "$FAILED_COUNT" -eq 0 ] 2>/dev/null && FAILED_COUNT=1
 
 # .tdd-state 기록
 jq -n \

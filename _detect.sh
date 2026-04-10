@@ -17,16 +17,43 @@ _SC_KNOWN_SRC_DIRS=(
 )
 
 # 프로젝트 루트에서 소스 디렉토리 후보를 감지한다.
+# 루트 직접 매치 + 1단계 서브디렉토리(모노레포) 탐색.
 # 결과를 SC_DETECTED_PATHS 배열에 저장.
 # 인수: $1 = 프로젝트 루트 경로
 sc_detect_watch_paths() {
     local project_root="$1"
     SC_DETECTED_PATHS=()
 
+    # 루트 직접 매치
     for pattern in "${_SC_KNOWN_SRC_DIRS[@]}"; do
         if [ -d "$project_root/$pattern" ]; then
             SC_DETECTED_PATHS+=("$pattern")
         fi
+    done
+
+    # 1단계 서브디렉토리 탐색 (모노레포: backend/src/, frontend/src/ 등)
+    for subdir in "$project_root"/*/; do
+        [ ! -d "$subdir" ] && continue
+        local subname
+        subname="$(basename "$subdir")"
+        # 숨김 디렉토리, node_modules, vendor 등 제외
+        case "$subname" in
+            .*|node_modules|vendor|dist|build|target|__pycache__) continue ;;
+        esac
+        for pattern in "${_SC_KNOWN_SRC_DIRS[@]}"; do
+            local candidate="$subname/$pattern"
+            if [ -d "$project_root/$candidate" ]; then
+                # 이미 추가된 경로와 중복 체크
+                local dup=false
+                for existing in "${SC_DETECTED_PATHS[@]}"; do
+                    if [ "$existing" = "$candidate" ]; then
+                        dup=true
+                        break
+                    fi
+                done
+                [ "$dup" = false ] && SC_DETECTED_PATHS+=("$candidate")
+            fi
+        done
     done
 }
 
